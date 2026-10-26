@@ -13,6 +13,7 @@ export function Button({ label, onPress, variant = 'primary' }: Props) {
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={label}
       onPress={onPress}
       style={({ pressed }) => [styles.base, styles[variant], pressed && styles.pressed]}
     >

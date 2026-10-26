@@ -5,6 +5,14 @@ import { formatMYR, parseAmountToSen } from '../src/money.ts';
 import { budgetProgress } from '../src/finance/budgets.ts';
 import { applyContribution, goalProgress } from '../src/finance/goals.ts';
 import { forecastMonthEnd, spendingByCategory } from '../src/finance/insights.ts';
+import {
+  fromBudgetRow,
+  fromGoalRow,
+  fromTransactionRow,
+  toBudgetRow,
+  toGoalRow,
+  toTransactionRow,
+} from '../src/finance/sync.ts';
 import { isTransactionList, summarize } from '../src/finance/transactions.ts';
 
 assert.equal(parseAmountToSen('12'), 1200);
@@ -66,5 +74,19 @@ assert.equal(isTransactionList(octTx), true);
 assert.equal(isTransactionList([{ ...octTx[0], amountSen: 1.5 }]), false);
 assert.equal(isTransactionList([{ ...octTx[0], type: 'gift' }]), false);
 assert.equal(isTransactionList('nope'), false);
+
+// Cloud rows round-trip back to the exact app records, scoped to the signed-in user.
+const sample = octTx[0];
+const txRow = toTransactionRow('user-1', sample);
+assert.equal(txRow.user_id, 'user-1');
+assert.equal(txRow.amount_sen, sample.amountSen);
+assert.deepEqual(fromTransactionRow({ ...txRow, occurred_at: '2026-10-01T04:00:00+00:00' }), {
+  ...sample,
+  occurredAt: '2026-10-01T04:00:00.000Z',
+});
+const budget = { category: 'Transport', limitSen: 30000 };
+assert.deepEqual(fromBudgetRow(toBudgetRow('user-1', budget)), budget);
+const savedGoal = { ...goal, createdAt: '2026-06-01T04:00:00.000Z' };
+assert.deepEqual(fromGoalRow({ ...toGoalRow('user-1', savedGoal), saved_sen: '25000' }), savedGoal);
 
 console.log('logic checks passed');
