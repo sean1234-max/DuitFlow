@@ -5,14 +5,11 @@ import { formatMYR, parseAmountToSen } from '../src/money.ts';
 import { budgetProgress } from '../src/finance/budgets.ts';
 import { applyContribution, goalProgress } from '../src/finance/goals.ts';
 import { forecastMonthEnd, spendingByCategory } from '../src/finance/insights.ts';
-import {
-  fromBudgetRow,
-  fromGoalRow,
-  fromTransactionRow,
-  toBudgetRow,
-  toGoalRow,
-  toTransactionRow,
-} from '../src/finance/sync.ts';
+import { parseBankMessage } from '../src/finance/bankMessage.ts';
+import { allCategories, isDuplicateCategory } from '../src/finance/categories.ts';
+import { csvCell, transactionsToCsv } from '../src/finance/csv.ts';
+import { dueOccurrences } from '../src/finance/recurring.ts';
+import { COLLECTIONS, upsertItem } from '../src/finance/sync.ts';
 import { isTransactionList, summarize } from '../src/finance/transactions.ts';
 
 assert.equal(parseAmountToSen('12'), 1200);
@@ -76,17 +73,76 @@ assert.equal(isTransactionList([{ ...octTx[0], type: 'gift' }]), false);
 assert.equal(isTransactionList('nope'), false);
 
 // Cloud rows round-trip back to the exact app records, scoped to the signed-in user.
+const T = COLLECTIONS.transactions;
 const sample = octTx[0];
-const txRow = toTransactionRow('user-1', sample);
+const txRow = T.toRow('user-1', sample);
 assert.equal(txRow.user_id, 'user-1');
 assert.equal(txRow.amount_sen, sample.amountSen);
-assert.deepEqual(fromTransactionRow({ ...txRow, occurred_at: '2026-10-01T04:00:00+00:00' }), {
+assert.deepEqual(T.fromRow({ ...txRow, occurred_at: '2026-10-01T04:00:00+00:00' }), {
   ...sample,
   occurredAt: '2026-10-01T04:00:00.000Z',
 });
 const budget = { category: 'Transport', limitSen: 30000 };
-assert.deepEqual(fromBudgetRow(toBudgetRow('user-1', budget)), budget);
+assert.deepEqual(COLLECTIONS.budgets.fromRow(COLLECTIONS.budgets.toRow('user-1', budget)), budget);
 const savedGoal = { ...goal, createdAt: '2026-06-01T04:00:00.000Z' };
-assert.deepEqual(fromGoalRow({ ...toGoalRow('user-1', savedGoal), saved_sen: '25000' }), savedGoal);
+assert.deepEqual(
+  COLLECTIONS.goals.fromRow({ ...COLLECTIONS.goals.toRow('user-1', savedGoal), saved_sen: '25000' }),
+  savedGoal,
+);
+const rule = {
+  id: 'r1', type: 'income', amountSen: 420000, category: null, note: 'Salary',
+  dayOfMonth: 31, startDate: new Date(2026, 7, 15, 12).toISOString(), lastGeneratedMonth: '2026-09',
+};
+const ruleRow = COLLECTIONS.recurring.toRow('user-1', rule);
+assert.equal(ruleRow.day_of_month, 31);
+assert.deepEqual(
+  COLLECTIONS.recurring.fromRow({ ...ruleRow, start_date: rule.startDate.replace('Z', '+00:00') }),
+  rule,
+);
+assert.deepEqual(
+  COLLECTIONS.categories.fromRow(COLLECTIONS.categories.toRow('u', { id: 'c1', name: 'Pets' })),
+  { id: 'c1', name: 'Pets' },
+);
+
+// upsertItem replaces by key, keeps sort order, and never mutates.
+const list = [sample];
+const edited = upsertItem(list, { ...sample, amountSen: 1 }, T);
+assert.equal(edited.length, 1);
+assert.equal(edited[0].amountSen, 1);
+assert.equal(list[0].amountSen, sample.amountSen);
+
+// Recurring: one occurrence per month, day clamped to month length, stable ids,
+// nothing before the start date, nothing in the future.
+const fresh = { ...rule, lastGeneratedMonth: null };
+const due = dueOccurrences(fresh, new Date(2026, 9, 26, 12));
+assert.deepEqual(due.transactions.map((t) => t.id), ['r1@2026-08', 'r1@2026-09']);
+assert.equal(new Date(due.transactions[1].occurredAt).getDate(), 30); // 31 Sep -> 30 Sep
+assert.equal(due.lastGeneratedMonth, '2026-09'); // 31 Oct hasn't happened yet
+assert.deepEqual(dueOccurrences(rule, new Date(2026, 9, 26, 12)).transactions, []);
+assert.equal(dueOccurrences(rule, new Date(2026, 9, 31, 12)).transactions[0].id, 'r1@2026-10');
+const firsts = dueOccurrences({ ...fresh, dayOfMonth: 1 }, new Date(2026, 9, 26, 12));
+assert.deepEqual(firsts.transactions.map((t) => t.id), ['r1@2026-09', 'r1@2026-10']); // 1 Aug < start
+
+// Categories: built-ins first, custom de-duplicated case-insensitively.
+const cats = allCategories([{ id: '1', name: 'Pets' }, { id: '2', name: 'pets' }, { id: '3', name: 'transport' }]);
+assert.deepEqual(cats.slice(8), ['Pets']);
+assert.equal(isDuplicateCategory(' TRANSPORT ', []), true);
+
+// Bank messages (English and Malay).
+assert.deepEqual(parseBankMessage('Maybank: RM45.90 debited from A/C xx1234 at GRAB*FOOD on 26/10.'), { type: 'expense', amountSen: 4590, note: 'GRAB*FOOD' });
+assert.deepEqual(parseBankMessage('You have received RM 1,200.00 from AHMAD BIN ALI via DuitNow.'), { type: 'income', amountSen: 120000, note: 'AHMAD BIN ALI' });
+assert.equal(parseBankMessage('CIMB: Your card was charged MYR 89.00 at SHOPEE MY.').note, 'SHOPEE MY');
+assert.equal(parseBankMessage('Refund of RM29.90 from Lazada has been credited.').type, 'refund');
+assert.equal(parseBankMessage('Wang RM50.00 telah dikreditkan ke akaun anda.').type, 'income');
+assert.equal(parseBankMessage('Pembelian RM12.50 di KK MART pada 26/10.').note, 'KK MART');
+assert.equal(parseBankMessage('Hello, no money here'), null);
+
+// CSV: formula injection neutralised, quotes escaped, expenses negative.
+assert.equal(csvCell('=HYPERLINK("x")'), `"'=HYPERLINK(""x"")"`);
+assert.equal(csvCell('a,b'), '"a,b"');
+assert.equal(csvCell('-RM5 refund'), "'-RM5 refund"); // user text starting with - is still guarded
+const csv = transactionsToCsv([{ ...octTx[0], note: 'Lunch, "mamak"' }]).split('\r\n');
+assert.equal(csv[0], 'Date,Type,Category,Amount (RM),Note');
+assert.equal(csv[1], '2026-10-01,expense,Food & Drinks,-60.00,"Lunch, ""mamak"""');
 
 console.log('logic checks passed');
