@@ -1,7 +1,7 @@
 import { createContext, useContext, type ReactNode } from 'react';
 
 import { formatDay, formatMonth, formatShortDay } from '../dates';
-import { categoryLabelKey } from '../finance/transactions';
+import { BUILT_IN_CATEGORIES, categoryLabelKey } from '../finance/transactions';
 import { usePersistentState } from '../storage';
 import { en, type TranslationKey } from './en';
 import { ms } from './ms';
@@ -78,6 +78,13 @@ export function useCategoryLabel() {
     return key ? t(key) : category;
   };
 }
+
+// Every built-in category's name in every language, so a custom category can't
+// duplicate one under its translated name (e.g. "交通" for Transport).
+export const BUILT_IN_CATEGORY_NAMES: string[] = BUILT_IN_CATEGORIES.flatMap((category) => {
+  const key = categoryLabelKey(category);
+  return key ? (Object.keys(DICTIONARIES) as Language[]).map((l) => translate(l, key)) : [];
+});
 
 // Date formatters bound to the current language.
 export function useDateFormat() {

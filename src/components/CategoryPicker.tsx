@@ -7,7 +7,7 @@ import { Field } from '@/components/Field';
 import { allCategories, isDuplicateCategory } from '@/finance/categories';
 import { useFinance } from '@/finance/FinanceContext';
 import { CATEGORY_MAX_LENGTH, isValidCategoryName, type Category } from '@/finance/transactions';
-import { useCategoryLabel, useT } from '@/i18n';
+import { BUILT_IN_CATEGORY_NAMES, useCategoryLabel, useT } from '@/i18n';
 import { spacing, typography, useThemedStyles, type Colors } from '@/theme';
 
 const NEW_CATEGORY = '__new__';
@@ -32,7 +32,12 @@ export function CategoryPicker({ selected, onSelect }: Props) {
   const handleAdd = () => {
     const trimmed = name.trim();
     if (!isValidCategoryName(trimmed)) return setError(t('categoryNameError'));
-    if (isDuplicateCategory(trimmed, categories)) return setError(t('categoryExists'));
+    const isTranslatedBuiltIn = BUILT_IN_CATEGORY_NAMES.some(
+      (label) => label.toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (isTranslatedBuiltIn || isDuplicateCategory(trimmed, categories)) {
+      return setError(t('categoryExists'));
+    }
     addCategory(trimmed);
     onSelect(trimmed);
     setName('');

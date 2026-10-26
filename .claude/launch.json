@@ -6,6 +6,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["expo", "start", "--web", "--port", "8081", "--clear"],
       "port": 8081
+    },
+    {
+      "name": "duitflow-web-test",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--web", "--port", "8084"],
+      "port": 8084
     }
   ]
 }
