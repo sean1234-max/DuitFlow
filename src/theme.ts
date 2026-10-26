@@ -11,6 +11,7 @@ export const brand = {
   slogan: 'Know Where Your Money Goes.',
   sloganZh: '让每一笔钱，都有迹可循。',
   currency: 'MYR',
+  privacyPolicyUrl: 'https://sean1234-max.github.io/DuitFlow/privacy.html',
 } as const;
 
 // Sampled from the logo: navy "D" plus a mint-to-blue ribbon.

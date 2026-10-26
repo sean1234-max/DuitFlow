@@ -3,59 +3,62 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
-import { formatShortDay } from '@/dates';
 import { useFinance } from '@/finance/FinanceContext';
 import { forecastMonthEnd, monthTransactions } from '@/finance/insights';
-import { signedAmountSen, summarize, typeLabel, type Transaction } from '@/finance/transactions';
+import { signedAmountSen, summarize, typeLabelKey, type Transaction } from '@/finance/transactions';
+import { useCategoryLabel, useDateFormat, useLanguage, useT } from '@/i18n';
 import { formatMYR } from '@/money';
 import { brand, radius, spacing, typography, useThemedStyles, type Colors } from '@/theme';
 
 function SummaryCard({ transactions }: { transactions: readonly Transaction[] }) {
+  const t = useT();
   const styles = useThemedStyles(createStyles);
   const { incomeSen, spendingSen, netSen } = summarize(monthTransactions(transactions, new Date()));
   return (
     <Card>
-      <Text style={styles.caption}>This month</Text>
+      <Text style={styles.caption}>{t('thisMonth')}</Text>
       <Text style={styles.balance}>{formatMYR(netSen)}</Text>
       <View style={styles.summaryRow}>
-        <Text style={styles.caption}>Income {formatMYR(incomeSen)}</Text>
-        <Text style={styles.caption}>Spending {formatMYR(spendingSen)}</Text>
+        <Text style={styles.caption}>{t('incomeAmount', { amount: formatMYR(incomeSen) })}</Text>
+        <Text style={styles.caption}>{t('spendingAmount', { amount: formatMYR(spendingSen) })}</Text>
       </View>
     </Card>
   );
 }
 
 function ForecastCard({ transactions }: { transactions: readonly Transaction[] }) {
+  const t = useT();
   const styles = useThemedStyles(createStyles);
   const forecast = forecastMonthEnd(transactions, new Date());
-  const isNegative = forecast.projectedNetSen < 0;
   return (
     <Card>
-      <Text style={styles.caption}>Month-end estimate</Text>
-      <Text style={[styles.forecastValue, isNegative && styles.negative]}>
+      <Text style={styles.caption}>{t('monthEndEstimate')}</Text>
+      <Text style={[styles.forecastValue, forecast.projectedNetSen < 0 && styles.negative]}>
         {formatMYR(forecast.projectedNetSen)}
       </Text>
       <Text style={styles.caption}>
-        If you keep spending like this, about {formatMYR(forecast.projectedSpendingSen)} in total
-        this month ({forecast.daysLeft} days left). Future income is not included.
+        {t('forecastExplain', {
+          amount: formatMYR(forecast.projectedSpendingSen),
+          days: forecast.daysLeft,
+        })}
       </Text>
-      {!forecast.isReliable && (
-        <Text style={styles.caption}>Early in the month, so this estimate may change a lot.</Text>
-      )}
+      {!forecast.isReliable && <Text style={styles.caption}>{t('forecastEarly')}</Text>}
     </Card>
   );
 }
 
 function TransactionRow({ transaction }: { transaction: Transaction }) {
+  const t = useT();
+  const categoryLabel = useCategoryLabel();
+  const { formatShortDay } = useDateFormat();
   const styles = useThemedStyles(createStyles);
   const signed = signedAmountSen(transaction);
-  const title = transaction.category
-    ? `${transaction.category}${transaction.type === 'refund' ? ' (refund)' : ''}`
-    : typeLabel(transaction.type);
+  const name = transaction.category ? categoryLabel(transaction.category) : t(typeLabelKey(transaction.type));
+  const title = transaction.type === 'refund' && transaction.category ? t('refundSuffix', { category: name }) : name;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityHint="Edit or delete this transaction"
+      accessibilityHint={t('editTransactionHint')}
       onPress={() => router.push({ pathname: '/add', params: { id: transaction.id } })}
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
     >
@@ -71,29 +74,30 @@ function TransactionRow({ transaction }: { transaction: Transaction }) {
 }
 
 export default function HomeScreen() {
+  const t = useT();
+  const { language } = useLanguage();
   const styles = useThemedStyles(createStyles);
   const { transactions } = useFinance();
   return (
     <View style={styles.container}>
       <FlatList
         data={transactions}
-        keyExtractor={(t) => t.id}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.slogan}>{brand.slogan}</Text>
+            <Text style={styles.slogan}>{language === 'zh' ? brand.sloganZh : brand.slogan}</Text>
             <SummaryCard transactions={transactions} />
             <ForecastCard transactions={transactions} />
-            <Text style={styles.sectionTitle}>Transactions</Text>
+            <Button label={t('askAiButton')} variant="secondary" onPress={() => router.push('/ask')} />
+            <Text style={styles.sectionTitle}>{t('transactions')}</Text>
           </View>
         }
-        ListEmptyComponent={
-          <Text style={styles.empty}>No transactions yet. Add your first one below.</Text>
-        }
+        ListEmptyComponent={<Text style={styles.empty}>{t('noTransactions')}</Text>}
         renderItem={({ item }) => <TransactionRow transaction={item} />}
       />
       <View style={styles.footer}>
-        <Button label="+ Add transaction" onPress={() => router.push('/add')} />
+        <Button label={t('addTransactionButton')} onPress={() => router.push('/add')} />
       </View>
     </View>
   );
@@ -109,7 +113,7 @@ const createStyles = (colors: Colors) =>
     balance: { ...typography.display, color: colors.textPrimary },
     forecastValue: { ...typography.title, color: colors.textPrimary },
     negative: { color: colors.danger },
-    summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
+    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing.xs },
     sectionTitle: { ...typography.title, color: colors.textPrimary, marginTop: spacing.sm },
     empty: { ...typography.body, color: colors.textSecondary, paddingVertical: spacing.lg },
     row: {

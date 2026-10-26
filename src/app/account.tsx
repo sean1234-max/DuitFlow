@@ -2,23 +2,21 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { useAuth } from '@/auth/AuthContext';
+import { NOT_CONFIGURED_ERROR, useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { ChipGroup } from '@/components/ChipGroup';
 import { Field } from '@/components/Field';
 import { Screen } from '@/components/Screen';
-import { spacing, typography, useThemedStyles, type Colors } from '@/theme';
+import { useT } from '@/i18n';
+import { radius, spacing, typography, useThemedStyles, type Colors } from '@/theme';
 
 type Mode = 'signIn' | 'signUp';
 
-const MODE_OPTIONS: { value: Mode; label: string }[] = [
-  { value: 'signIn', label: 'Sign in' },
-  { value: 'signUp', label: 'Create account' },
-];
 const MIN_PASSWORD_LENGTH = 8;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function AccountScreen() {
+  const t = useT();
   const styles = useThemedStyles(createStyles);
   const { signIn, signUp } = useAuth();
   const [mode, setMode] = useState<Mode>('signIn');
@@ -30,11 +28,9 @@ export default function AccountScreen() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const trimmedEmail = email.trim();
-  const emailError = EMAIL_PATTERN.test(trimmedEmail) ? null : 'Enter a valid email address.';
+  const emailError = EMAIL_PATTERN.test(trimmedEmail) ? null : t('emailError');
   const passwordError =
-    password.length >= MIN_PASSWORD_LENGTH
-      ? null
-      : `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
+    password.length >= MIN_PASSWORD_LENGTH ? null : t('passwordError', { n: MIN_PASSWORD_LENGTH });
 
   const handleSubmit = async () => {
     setHasTried(true);
@@ -46,28 +42,33 @@ export default function AccountScreen() {
       mode === 'signIn' ? await signIn(trimmedEmail, password) : await signUp(trimmedEmail, password);
     setIsSubmitting(false);
     if (result.error) {
-      setServerError(result.error);
+      // Supabase's own messages are shown as-is (English); ours are translated.
+      setServerError(result.error === NOT_CONFIGURED_ERROR ? t('notConfigured') : result.error);
       return;
     }
     if (result.needsEmailConfirmation) {
-      setNotice(`We sent a confirmation link to ${trimmedEmail}. Open it, then sign in here.`);
+      setNotice(t('confirmEmailSent', { email: trimmedEmail }));
       setMode('signIn');
       return;
     }
     router.back();
   };
 
-  const submitLabel = isSubmitting ? 'Please wait…' : mode === 'signIn' ? 'Sign in' : 'Create account';
+  const submitLabel = isSubmitting ? t('pleaseWait') : mode === 'signIn' ? t('signIn') : t('createAccount');
 
   return (
     <Screen>
-      <Text style={styles.intro}>
-        Sign in to back up your records and use DuitFlow on more than one phone. Anything you
-        recorded before signing in will be added to your account.
-      </Text>
-      <ChipGroup options={MODE_OPTIONS} selected={mode} onSelect={setMode} />
+      <Text style={styles.intro}>{t('accountIntro')}</Text>
+      <ChipGroup
+        options={[
+          { value: 'signIn' as const, label: t('signIn') },
+          { value: 'signUp' as const, label: t('createAccount') },
+        ]}
+        selected={mode}
+        onSelect={setMode}
+      />
       <Field
-        label="Email"
+        label={t('email')}
         value={email}
         onChangeText={setEmail}
         placeholder="you@example.com"
@@ -78,7 +79,7 @@ export default function AccountScreen() {
         error={hasTried ? emailError : null}
       />
       <Field
-        label="Password"
+        label={t('password')}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
@@ -106,6 +107,6 @@ const createStyles = (colors: Colors) =>
   StyleSheet.create({
     intro: { ...typography.body, color: colors.textSecondary },
     error: { ...typography.caption, color: colors.danger },
-    notice: { padding: spacing.md, borderRadius: 12, backgroundColor: colors.primaryTint },
+    notice: { padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.primaryTint },
     noticeText: { ...typography.body, color: colors.textPrimary },
   });

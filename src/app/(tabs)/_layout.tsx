@@ -2,19 +2,21 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
 
+import { useT, type TranslationKey } from '@/i18n';
 import { useColors } from '@/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
-const TABS: { name: string; title: string; icon: IconName }[] = [
-  { name: 'index', title: 'Home', icon: 'home-outline' },
-  { name: 'insights', title: 'Insights', icon: 'pie-chart-outline' },
-  { name: 'budgets', title: 'Budgets', icon: 'wallet-outline' },
-  { name: 'goals', title: 'Goals', icon: 'flag-outline' },
-  { name: 'settings', title: 'Settings', icon: 'settings-outline' },
+const TABS: { name: string; titleKey: TranslationKey; icon: IconName }[] = [
+  { name: 'index', titleKey: 'tabHome', icon: 'home-outline' },
+  { name: 'insights', titleKey: 'tabInsights', icon: 'pie-chart-outline' },
+  { name: 'budgets', titleKey: 'tabBudgets', icon: 'wallet-outline' },
+  { name: 'goals', titleKey: 'tabGoals', icon: 'flag-outline' },
+  { name: 'settings', titleKey: 'tabSettings', icon: 'settings-outline' },
 ];
 
 export default function TabsLayout() {
+  const t = useT();
   const colors = useColors();
   return (
     <Tabs
@@ -29,13 +31,13 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: colors.icon,
       }}
     >
-      {TABS.map(({ name, title, icon }) => (
+      {TABS.map(({ name, titleKey, icon }) => (
         <Tabs.Screen
           key={name}
           name={name}
           options={{
-            title: name === 'index' ? 'DuitFlow' : title,
-            tabBarLabel: title,
+            title: name === 'index' ? 'DuitFlow' : t(titleKey),
+            tabBarLabel: t(titleKey),
             tabBarIcon: ({ color, size }) => (
               <Ionicons
                 name={icon}

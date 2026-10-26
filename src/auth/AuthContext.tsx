@@ -12,11 +12,14 @@ interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<AuthResult>;
   signUp: (email: string, password: string) => Promise<AuthResult>;
   signOut: () => Promise<AuthResult>;
+  deleteAccount: () => Promise<AuthResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const NOT_CONFIGURED: AuthResult = { error: 'Cloud sync is not set up in this build.' };
+// Screens translate this code into the user's language.
+export const NOT_CONFIGURED_ERROR = 'not_configured';
+const NOT_CONFIGURED: AuthResult = { error: NOT_CONFIGURED_ERROR };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -52,6 +55,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!supabase) return NOT_CONFIGURED;
       const { error } = await supabase.auth.signOut();
       return { error: error?.message ?? null };
+    },
+    // Deleting a user needs the service role, so it runs in the delete-account Edge
+    // Function; the database removes all of the user's rows (on delete cascade).
+    deleteAccount: async () => {
+      if (!supabase) return NOT_CONFIGURED;
+      const { error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
+      if (error) return { error: error.message };
+      await supabase.auth.signOut({ scope: 'local' });
+      return { error: null };
     },
   };
 

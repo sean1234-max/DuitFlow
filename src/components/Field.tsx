@@ -43,5 +43,3 @@ const createStyles = (colors: Colors) =>
     inputError: { borderColor: colors.danger },
     error: { ...typography.caption, color: colors.danger },
   });
-
-export const AMOUNT_ERROR = 'Enter an amount above 0, with up to 2 decimals.';

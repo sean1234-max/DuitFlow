@@ -4,15 +4,17 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
-import { AMOUNT_ERROR, Field } from '@/components/Field';
+import { Field } from '@/components/Field';
 import { Screen } from '@/components/Screen';
 import { confirmDestructive } from '@/confirm';
 import { useFinance } from '@/finance/FinanceContext';
 import { GOAL_NAME_MAX_LENGTH, goalProgress, type Goal } from '@/finance/goals';
+import { useT } from '@/i18n';
 import { formatAmountInput, formatMYR, parseAmountToSen } from '@/money';
 import { spacing, typography, useThemedStyles, type Colors } from '@/theme';
 
 function ContributionCard({ goal }: { goal: Goal }) {
+  const t = useT();
   const styles = useThemedStyles(createStyles);
   const { contributeToGoal } = useFinance();
   const [amountText, setAmountText] = useState('');
@@ -30,30 +32,31 @@ function ContributionCard({ goal }: { goal: Goal }) {
 
   return (
     <Card>
-      <Text style={styles.caption}>Saved so far</Text>
+      <Text style={styles.caption}>{t('savedSoFar')}</Text>
       <Text style={styles.saved}>
-        {formatMYR(goal.savedSen)} of {formatMYR(goal.targetSen)}
+        {t('xOfY', { x: formatMYR(goal.savedSen), y: formatMYR(goal.targetSen) })}
       </Text>
       <Text style={styles.caption}>
-        {isComplete ? 'Goal reached 🎉' : `${formatMYR(remainingSen)} to go`}
+        {isComplete ? t('goalReached') : t('toGo', { amount: formatMYR(remainingSen) })}
       </Text>
       <View style={styles.contribution}>
         <Field
-          label="Amount (RM)"
+          label={t('amountRm')}
           value={amountText}
           onChangeText={setAmountText}
           placeholder="0.00"
           keyboardType="decimal-pad"
-          error={hasTried && amountSen === null ? AMOUNT_ERROR : null}
+          error={hasTried && amountSen === null ? t('amountError') : null}
         />
-        <Button label="Add money" onPress={() => apply(1)} />
-        <Button label="Withdraw" variant="secondary" onPress={() => apply(-1)} />
+        <Button label={t('addMoney')} onPress={() => apply(1)} />
+        <Button label={t('withdraw')} variant="secondary" onPress={() => apply(-1)} />
       </View>
     </Card>
   );
 }
 
 export default function GoalScreen() {
+  const t = useT();
   const styles = useThemedStyles(createStyles);
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { goals, addGoal, updateGoal, deleteGoal } = useFinance();
@@ -77,37 +80,42 @@ export default function GoalScreen() {
 
   const handleDelete = () => {
     if (!existing) return;
-    confirmDestructive(`Delete "${existing.name}"?`, 'This cannot be undone.', () => {
-      deleteGoal(existing.id);
-      router.back();
-    });
+    confirmDestructive(
+      t('deleteGoalTitle', { name: existing.name }),
+      t('cannotUndo'),
+      { confirm: t('delete'), cancel: t('cancel') },
+      () => {
+        deleteGoal(existing.id);
+        router.back();
+      },
+    );
   };
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: existing ? existing.name : 'New goal' }} />
+      <Stack.Screen options={{ title: existing ? existing.name : t('screenNewGoal') }} />
       {existing && <ContributionCard goal={existing} />}
 
-      {existing && <Text style={styles.sectionTitle}>Goal details</Text>}
+      {existing && <Text style={styles.sectionTitle}>{t('goalDetails')}</Text>}
       <Field
-        label="Goal name"
+        label={t('goalName')}
         value={name}
         onChangeText={setName}
-        placeholder="e.g. Emergency fund"
+        placeholder={t('goalNamePlaceholder')}
         maxLength={GOAL_NAME_MAX_LENGTH}
-        error={hasTriedSave && !trimmedName ? 'Give your goal a name.' : null}
+        error={hasTriedSave && !trimmedName ? t('goalNameError') : null}
       />
       <Field
-        label="Target amount (RM)"
+        label={t('targetAmount')}
         value={targetText}
         onChangeText={setTargetText}
         placeholder="0.00"
         keyboardType="decimal-pad"
-        error={hasTriedSave && targetSen === null ? AMOUNT_ERROR : null}
+        error={hasTriedSave && targetSen === null ? t('amountError') : null}
       />
 
-      <Button label={existing ? 'Save changes' : 'Create goal'} onPress={handleSave} />
-      {existing && <Button label="Delete goal" variant="danger" onPress={handleDelete} />}
+      <Button label={existing ? t('saveChanges') : t('createGoal')} onPress={handleSave} />
+      {existing && <Button label={t('deleteGoal')} variant="danger" onPress={handleDelete} />}
     </Screen>
   );
 }

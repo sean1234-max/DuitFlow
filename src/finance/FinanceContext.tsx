@@ -116,7 +116,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
   // Realtime callbacks need the latest pending-change flags without resubscribing.
   const pendingRef = useRef({ hasUnsynced, tombstones });
-  pendingRef.current = { hasUnsynced, tombstones };
+  useEffect(() => {
+    pendingRef.current = { hasUnsynced, tombstones };
+  }, [hasUnsynced, tombstones]);
 
   const replaceAll = (next: FinanceData) => {
     for (const name of COLLECTION_NAMES) setters[name](() => next[name] as never);

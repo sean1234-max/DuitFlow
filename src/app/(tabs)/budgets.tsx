@@ -6,22 +6,26 @@ import { Card } from '@/components/Card';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Screen } from '@/components/Screen';
 import { budgetProgress, type BudgetStatus } from '@/finance/budgets';
+import { allCategories } from '@/finance/categories';
 import { useFinance } from '@/finance/FinanceContext';
 import { monthTransactions, spendingByCategory } from '@/finance/insights';
-import { EXPENSE_CATEGORIES } from '@/finance/transactions';
+import { useCategoryLabel, useT } from '@/i18n';
 import { formatMYR } from '@/money';
 import { radius, spacing, typography, useColors, useThemedStyles, type Colors } from '@/theme';
 
 export default function BudgetsScreen() {
+  const t = useT();
+  const categoryLabel = useCategoryLabel();
   const colors = useColors();
   const styles = useThemedStyles(createStyles);
-  const { budgets, transactions } = useFinance();
+  const { budgets, transactions, categories } = useFinance();
 
+  const order = allCategories(categories);
   const spentByCategory = new Map(
     spendingByCategory(monthTransactions(transactions, new Date())).map((c) => [c.category, c.spentSen]),
   );
   const rows = [...budgets]
-    .sort((a, b) => EXPENSE_CATEGORIES.indexOf(a.category) - EXPENSE_CATEGORIES.indexOf(b.category))
+    .sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category))
     .map((budget) => ({
       budget,
       progress: budgetProgress(budget.limitSen, spentByCategory.get(budget.category) ?? 0),
@@ -41,22 +45,24 @@ export default function BudgetsScreen() {
   const statusTextColor = (status: BudgetStatus) =>
     status === 'ok' ? colors.textSecondary : statusColor[status];
   const statusText = (remainingSen: number) =>
-    remainingSen >= 0 ? `${formatMYR(remainingSen)} left` : `${formatMYR(-remainingSen)} over`;
+    remainingSen >= 0
+      ? t('left', { amount: formatMYR(remainingSen) })
+      : t('over', { amount: formatMYR(-remainingSen) });
 
   return (
     <Screen>
-      <Text style={styles.caption}>Monthly limits per category. Resets on the 1st.</Text>
+      <Text style={styles.caption}>{t('budgetsIntro')}</Text>
 
       {rows.length > 0 && (
         <Card>
-          <Text style={styles.caption}>Total this month</Text>
+          <Text style={styles.caption}>{t('totalThisMonth')}</Text>
           <Text style={styles.total}>
-            {formatMYR(totalProgress.spentSen)} of {formatMYR(totalLimit)}
+            {t('xOfY', { x: formatMYR(totalProgress.spentSen), y: formatMYR(totalLimit) })}
           </Text>
           <ProgressBar
             ratio={totalProgress.ratio}
             color={statusColor[totalProgress.status]}
-            label="Total budget used"
+            label={t('totalBudgetUsed')}
           />
           <Text style={[styles.caption, { color: statusTextColor(totalProgress.status) }]}>
             {statusText(totalProgress.remainingSen)}
@@ -64,38 +70,37 @@ export default function BudgetsScreen() {
         </Card>
       )}
 
-      {rows.length === 0 && (
-        <Text style={styles.empty}>
-          No budgets yet. Set a monthly limit for a category to see how much you have left.
-        </Text>
-      )}
+      {rows.length === 0 && <Text style={styles.empty}>{t('noBudgets')}</Text>}
 
-      {rows.map(({ budget, progress }) => (
-        <Pressable
-          key={budget.category}
-          accessibilityRole="button"
-          accessibilityHint="Edit or remove this budget"
-          onPress={() => router.push({ pathname: '/budget', params: { category: budget.category } })}
-          style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-        >
-          <View style={styles.rowHeader}>
-            <Text style={styles.body}>{budget.category}</Text>
-            <Text style={styles.caption}>
-              {formatMYR(progress.spentSen)} / {formatMYR(budget.limitSen)}
+      {rows.map(({ budget, progress }) => {
+        const label = categoryLabel(budget.category);
+        return (
+          <Pressable
+            key={budget.category}
+            accessibilityRole="button"
+            accessibilityHint={t('editBudgetHint')}
+            onPress={() => router.push({ pathname: '/budget', params: { category: budget.category } })}
+            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+          >
+            <View style={styles.rowHeader}>
+              <Text style={styles.body}>{label}</Text>
+              <Text style={styles.caption}>
+                {formatMYR(progress.spentSen)} / {formatMYR(budget.limitSen)}
+              </Text>
+            </View>
+            <ProgressBar
+              ratio={progress.ratio}
+              color={statusColor[progress.status]}
+              label={t('budgetUsed', { category: label })}
+            />
+            <Text style={[styles.caption, { color: statusTextColor(progress.status) }]}>
+              {statusText(progress.remainingSen)}
             </Text>
-          </View>
-          <ProgressBar
-            ratio={progress.ratio}
-            color={statusColor[progress.status]}
-            label={`${budget.category} budget used`}
-          />
-          <Text style={[styles.caption, { color: statusTextColor(progress.status) }]}>
-            {statusText(progress.remainingSen)}
-          </Text>
-        </Pressable>
-      ))}
+          </Pressable>
+        );
+      })}
 
-      <Button label="+ Add budget" onPress={() => router.push('/budget')} />
+      <Button label={t('addBudgetButton')} onPress={() => router.push('/budget')} />
     </Screen>
   );
 }
@@ -103,7 +108,7 @@ export default function BudgetsScreen() {
 const createStyles = (colors: Colors) =>
   StyleSheet.create({
     caption: { ...typography.caption, color: colors.textSecondary },
-    body: { ...typography.body, color: colors.textPrimary },
+    body: { ...typography.body, color: colors.textPrimary, flexShrink: 1 },
     total: { ...typography.title, color: colors.textPrimary },
     empty: { ...typography.body, color: colors.textSecondary },
     row: {
@@ -113,5 +118,10 @@ const createStyles = (colors: Colors) =>
       backgroundColor: colors.surface,
     },
     rowPressed: { opacity: 0.7 },
-    rowHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    rowHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
   });

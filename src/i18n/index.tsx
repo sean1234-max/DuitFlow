@@ -1,6 +1,7 @@
 import { createContext, useContext, type ReactNode } from 'react';
 
 import { formatDay, formatMonth, formatShortDay } from '../dates';
+import { categoryLabelKey } from '../finance/transactions';
 import { usePersistentState } from '../storage';
 import { en, type TranslationKey } from './en';
 import { ms } from './ms';
@@ -9,7 +10,7 @@ import { zh } from './zh';
 export type Language = 'en' | 'zh' | 'ms';
 export type LanguagePreference = 'system' | Language;
 
-const DICTIONARIES: Record<Language, Partial<Record<TranslationKey, string>>> = { en, zh, ms };
+const DICTIONARIES: Record<Language, Record<TranslationKey, string>> = { en, zh, ms };
 
 // Locale used for dates and numbers in each language (Malaysian variants).
 export const LOCALES: Record<Language, string> = { en: 'en-MY', zh: 'zh-Hans-MY', ms: 'ms-MY' };
@@ -67,6 +68,15 @@ export const useLanguage = () => useContext(LanguageContext);
 export function useT(): Translate {
   const { language } = useLanguage();
   return (key, params) => translate(language, key, params);
+}
+
+// Built-in categories are translated; the user's own categories are shown as typed.
+export function useCategoryLabel() {
+  const t = useT();
+  return (category: string) => {
+    const key = categoryLabelKey(category);
+    return key ? t(key) : category;
+  };
 }
 
 // Date formatters bound to the current language.
