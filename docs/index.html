@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>DuitFlow</title>
+  <link rel="icon" href="logo.png">
+  <style>
+    /* Same tokens as src/theme.ts */
+    :root {
+      --bg: #F5F7FA; --surface: #FFFFFF; --text: #1D1C55; --text-2: #475569;
+      --border: #E2E8F0; --mint: #66DDB4; --danger: #DC2626;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0E0F24; --surface: #1A1B3A; --text: #EEF1F7; --text-2: #A9B2C3;
+        --border: #2E3060; --danger: #F87171;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px;
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+    }
+    main {
+      width: 100%; max-width: 420px; padding: 32px 24px; text-align: center;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    }
+    /* White tile like the app icon, so the navy "D" stays visible in dark mode. */
+    img { width: 72px; height: 72px; padding: 8px; border-radius: 16px; background: #FFFFFF; }
+    h1 { font-size: 24px; margin: 16px 0 8px; }
+    p { font-size: 16px; line-height: 1.5; color: var(--text-2); margin: 8px 0; }
+    .zh { font-size: 15px; }
+    .badge {
+      display: inline-block; margin-top: 16px; padding: 12px 20px; border-radius: 12px;
+      background: var(--mint); color: #1D1C55; font-weight: 600;
+    }
+    .error h1 { color: var(--danger); }
+    footer { margin-top: 24px; font-size: 13px; color: var(--text-2); }
+  </style>
+</head>
+<body>
+  <main id="success">
+    <img src="logo.png" alt="DuitFlow logo">
+    <h1>Email confirmed</h1>
+    <p>Your DuitFlow account is ready. Go back to the DuitFlow app and sign in.</p>
+    <p class="zh">邮箱验证成功！请回到 DuitFlow App 登录。</p>
+    <span class="badge">You can close this page</span>
+    <footer>DuitFlow · Know Where Your Money Goes.</footer>
+  </main>
+
+  <main id="failure" class="error" hidden>
+    <img src="logo.png" alt="DuitFlow logo">
+    <h1>Link didn't work</h1>
+    <p id="failure-reason">This confirmation link has expired or was already used.</p>
+    <p>Try signing in to the app. If it says your email is not confirmed, create the account again to get a new link.</p>
+    <p class="zh">链接已过期或已使用。请先尝试在 App 登录；如果提示邮箱未验证，请重新注册以获取新链接。</p>
+    <footer>DuitFlow · Know Where Your Money Goes.</footer>
+  </main>
+
+  <script>
+    // Supabase appends either sign-in tokens or an error to this URL. This page never
+    // uses the tokens: it only reads whether there was an error, then removes them
+    // from the address bar so they are not kept in history or shared by accident.
+    (function () {
+      var params = new URLSearchParams(location.hash.slice(1) || location.search.slice(1));
+      var errorCode = params.get('error_code') || params.get('error');
+      if (errorCode) {
+        document.getElementById('success').hidden = true;
+        document.getElementById('failure').hidden = false;
+        if (errorCode !== 'otp_expired' && params.get('error_description')) {
+          document.getElementById('failure-reason').textContent = params.get('error_description');
+        }
+      }
+      if (location.hash || location.search) {
+        history.replaceState(null, '', location.pathname);
+      }
+    })();
+  </script>
+</body>
+</html>
