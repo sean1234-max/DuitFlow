@@ -1,13 +1,15 @@
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { Pressable, Text } from 'react-native';
 
-import { useColors } from '@/theme';
+import { spacing, typography, useColors } from '@/theme';
+import { ThemePreferenceProvider } from '@/themePreference';
 import { TransactionsProvider } from '@/transactions/TransactionsContext';
 
-export default function RootLayout() {
+function AppStack() {
   const colors = useColors();
   return (
-    <TransactionsProvider>
+    <>
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.background },
@@ -16,10 +18,35 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: colors.background },
         }}
       >
-        <Stack.Screen name="index" options={{ title: 'DuitFlow' }} />
+        <Stack.Screen
+          name="index"
+          options={{
+            title: 'DuitFlow',
+            headerRight: () => (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push('/settings')}
+                hitSlop={spacing.sm}
+              >
+                <Text style={{ ...typography.body, color: colors.textPrimary }}>Settings</Text>
+              </Pressable>
+            ),
+          }}
+        />
         <Stack.Screen name="add" options={{ title: 'Add transaction', presentation: 'modal' }} />
+        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
       </Stack>
       <StatusBar style={colors.isDark ? 'light' : 'dark'} />
-    </TransactionsProvider>
+    </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemePreferenceProvider>
+      <TransactionsProvider>
+        <AppStack />
+      </TransactionsProvider>
+    </ThemePreferenceProvider>
   );
 }

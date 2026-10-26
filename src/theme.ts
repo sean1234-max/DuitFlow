@@ -4,6 +4,8 @@
 import { useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 
+import { useThemePreference } from './themePreference';
+
 export const brand = {
   name: 'DuitFlow',
   slogan: 'Know Where Your Money Goes.',
@@ -77,9 +79,12 @@ export const darkColors: Colors = {
   danger: '#F87171',
 };
 
-// Follows the phone's light/dark setting.
+// Uses the in-app choice, falling back to the phone's light/dark setting for "system".
 export function useColors(): Colors {
-  return useColorScheme() === 'dark' ? darkColors : lightColors;
+  const { preference } = useThemePreference();
+  const systemScheme = useColorScheme();
+  const scheme = preference === 'system' ? systemScheme : preference;
+  return scheme === 'dark' ? darkColors : lightColors;
 }
 
 // Builds a StyleSheet from the current colors, rebuilt only when the scheme changes.
