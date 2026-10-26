@@ -24,6 +24,13 @@
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "scheme": "duitflow",
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }

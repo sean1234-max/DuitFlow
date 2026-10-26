@@ -50,7 +50,3 @@ export const typography = {
   body: { fontSize: 16, fontWeight: '400' },
   caption: { fontSize: 13, fontWeight: '400' },
 } as const;
-
-// Formats a ringgit amount, e.g. 4820.5 -> "RM 4,820.50".
-export const formatMYR = (amount: number) =>
-  `RM ${amount.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
