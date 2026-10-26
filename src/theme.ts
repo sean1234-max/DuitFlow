@@ -8,10 +8,12 @@ export const brand = {
   currency: 'MYR',
 } as const;
 
+// Sampled from the logo: navy "D" plus a mint-to-blue ribbon.
 const palette = {
-  emerald: '#10B981',
-  emeraldTint: '#E7F8F1',
-  navy: '#0F2D56',
+  mint: '#66DDB4',
+  mintTint: '#E8F9F2',
+  blue: '#3C88D1',
+  navy: '#1D1C55',
   slate: '#64748B',
   slateDark: '#475569',
   lightGray: '#F5F7FA',
@@ -21,16 +23,18 @@ const palette = {
 } as const;
 
 export const colors = {
-  primary: palette.emerald,
-  primaryTint: palette.emeraldTint,
+  primary: palette.mint,
+  primaryTint: palette.mintTint,
   secondary: palette.navy,
+  // Blue is 3.5:1 on the background: fine for charts/icons, too light for body text.
+  accent: palette.blue,
   background: palette.lightGray,
   surface: palette.white,
   textPrimary: palette.navy,
   // Brand slate (#64748B) is 4.4:1 on the background, under WCAG AA; slateDark passes.
   textSecondary: palette.slateDark,
   icon: palette.slate,
-  // White on emerald is 2.5:1 (fails AA); navy on emerald is 5.4:1.
+  // Navy on mint is 9.3:1; white on mint would fail AA.
   textOnPrimary: palette.navy,
   border: palette.border,
   danger: palette.danger,
