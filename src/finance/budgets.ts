@@ -1,7 +1,7 @@
-import { EXPENSE_CATEGORIES, type ExpenseCategory } from './transactions.ts';
+import { isValidCategoryName, type Category } from './transactions.ts';
 
 export interface Budget {
-  category: ExpenseCategory;
+  category: Category;
   limitSen: number; // per calendar month
 }
 
@@ -29,7 +29,7 @@ export function isBudgetList(value: unknown): value is Budget[] {
       (b) =>
         typeof b === 'object' &&
         b !== null &&
-        EXPENSE_CATEGORIES.includes(b.category) &&
+        isValidCategoryName(b.category) &&
         Number.isInteger(b.limitSen) &&
         b.limitSen > 0,
     )

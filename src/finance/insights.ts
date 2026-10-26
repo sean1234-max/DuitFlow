@@ -1,18 +1,18 @@
 import { daysInMonth, isSameMonth } from '../dates.ts';
-import { summarize, type ExpenseCategory, type Transaction } from './transactions.ts';
+import { summarize, type Category, type Transaction } from './transactions.ts';
 
 export const monthTransactions = (transactions: readonly Transaction[], month: Date) =>
   transactions.filter((t) => isSameMonth(t.occurredAt, month));
 
 export interface CategorySpend {
-  category: ExpenseCategory;
+  category: Category;
   spentSen: number;
   share: number; // 0..1 of total category spending
 }
 
 // Spending per category (expenses minus refunds), largest first. Empty categories are dropped.
 export function spendingByCategory(transactions: readonly Transaction[]): CategorySpend[] {
-  const totals = new Map<ExpenseCategory, number>();
+  const totals = new Map<Category, number>();
   for (const t of transactions) {
     if (!t.category) continue;
     const sign = t.type === 'expense' ? 1 : t.type === 'refund' ? -1 : 0;
