@@ -25,7 +25,7 @@ export interface Transaction {
   id: string;
   type: TransactionType;
   amountSen: number; // always positive; `type` decides the direction
-  category: ExpenseCategory | null; // only for expenses
+  category: ExpenseCategory | null; // only for expenses and refunds
   note: string;
   occurredAt: string; // ISO timestamp
 }
@@ -51,7 +51,26 @@ export function signedAmountSen({ type, amountSen }: Transaction): number {
   return type === 'expense' ? -amountSen : amountSen;
 }
 
-export function isSameMonth(iso: string, now: Date): boolean {
-  const d = new Date(iso);
-  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+// Refunds carry a category too, so they can be netted against that category's spending.
+export const hasCategory = (type: TransactionType) => type === 'expense' || type === 'refund';
+
+export const typeLabel = (type: TransactionType) =>
+  TRANSACTION_TYPES.find((option) => option.value === type)?.label ?? type;
+
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+
+export function isTransactionList(value: unknown): value is Transaction[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (t) =>
+        isObject(t) &&
+        typeof t.id === 'string' &&
+        TRANSACTION_TYPES.some((option) => option.value === t.type) &&
+        Number.isInteger(t.amountSen) &&
+        (t.category === null || EXPENSE_CATEGORIES.includes(t.category as ExpenseCategory)) &&
+        typeof t.note === 'string' &&
+        typeof t.occurredAt === 'string',
+    )
+  );
 }

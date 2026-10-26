@@ -12,6 +12,9 @@ export function parseAmountToSen(input: string): number | null {
   return sen > 0 && sen <= MAX_AMOUNT_SEN ? sen : null;
 }
 
+// Formats sen back into an editable amount, e.g. 1250 -> "12.50".
+export const formatAmountInput = (sen: number) => (sen / 100).toFixed(2);
+
 // Formats sen as ringgit, e.g. 482050 -> "RM 4,820.50", -500 -> "-RM 5.00".
 export function formatMYR(sen: number): string {
   const ringgit = (Math.abs(sen) / 100).toLocaleString('en-MY', {

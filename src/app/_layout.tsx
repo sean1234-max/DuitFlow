@@ -1,10 +1,9 @@
-import { router, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Pressable, Text } from 'react-native';
 
-import { spacing, typography, useColors } from '@/theme';
+import { FinanceProvider } from '@/finance/FinanceContext';
+import { useColors } from '@/theme';
 import { ThemePreferenceProvider } from '@/themePreference';
-import { TransactionsProvider } from '@/transactions/TransactionsContext';
 
 function AppStack() {
   const colors = useColors();
@@ -16,25 +15,13 @@ function AppStack() {
           headerTintColor: colors.textPrimary,
           headerShadowVisible: false,
           contentStyle: { backgroundColor: colors.background },
+          presentation: 'modal',
         }}
       >
-        <Stack.Screen
-          name="index"
-          options={{
-            title: 'DuitFlow',
-            headerRight: () => (
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => router.push('/settings')}
-                hitSlop={spacing.sm}
-              >
-                <Text style={{ ...typography.body, color: colors.textPrimary }}>Settings</Text>
-              </Pressable>
-            ),
-          }}
-        />
-        <Stack.Screen name="add" options={{ title: 'Add transaction', presentation: 'modal' }} />
-        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="add" options={{ title: 'Transaction' }} />
+        <Stack.Screen name="budget" options={{ title: 'Budget' }} />
+        <Stack.Screen name="goal" options={{ title: 'Savings goal' }} />
       </Stack>
       <StatusBar style={colors.isDark ? 'light' : 'dark'} />
     </>
@@ -44,9 +31,9 @@ function AppStack() {
 export default function RootLayout() {
   return (
     <ThemePreferenceProvider>
-      <TransactionsProvider>
+      <FinanceProvider>
         <AppStack />
-      </TransactionsProvider>
+      </FinanceProvider>
     </ThemePreferenceProvider>
   );
 }

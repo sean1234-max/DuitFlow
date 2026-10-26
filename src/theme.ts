@@ -40,6 +40,7 @@ export interface Colors {
   icon: string;
   textOnPrimary: string;
   border: string;
+  warning: string;
   danger: string;
 }
 
@@ -59,6 +60,7 @@ export const lightColors: Colors = {
   // Navy on mint is 9.3:1; white on mint would fail AA.
   textOnPrimary: palette.navy,
   border: palette.border,
+  warning: '#B45309', // 5.0:1 on white
   danger: palette.danger,
 };
 
@@ -76,6 +78,7 @@ export const darkColors: Colors = {
   icon: '#8792A8',
   textOnPrimary: palette.navy,
   border: '#2E3060',
+  warning: '#FBBF24',
   danger: '#F87171',
 };
 

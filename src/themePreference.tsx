@@ -1,9 +1,9 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
+
+import { usePersistentState } from './storage';
 
 export type ThemePreference = 'system' | 'light' | 'dark';
 
-const STORAGE_KEY = 'duitflow.themePreference';
 const isThemePreference = (value: unknown): value is ThemePreference =>
   value === 'system' || value === 'light' || value === 'dark';
 
@@ -18,23 +18,11 @@ const ThemePreferenceContext = createContext<ThemePreferenceContextValue>({
 });
 
 export function ThemePreferenceProvider({ children }: { children: ReactNode }) {
-  const [preference, setPreferenceState] = useState<ThemePreference>('system');
-
-  useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((stored) => {
-        if (isThemePreference(stored)) setPreferenceState(stored);
-      })
-      .catch((error: unknown) => console.warn('Could not load theme preference', error));
-  }, []);
-
-  const setPreference = (next: ThemePreference) => {
-    setPreferenceState(next);
-    AsyncStorage.setItem(STORAGE_KEY, next).catch((error: unknown) =>
-      console.warn('Could not save theme preference', error),
-    );
-  };
-
+  const [preference, setPreference] = usePersistentState<ThemePreference>(
+    'duitflow.themePreference',
+    'system',
+    isThemePreference,
+  );
   return (
     <ThemePreferenceContext.Provider value={{ preference, setPreference }}>
       {children}
