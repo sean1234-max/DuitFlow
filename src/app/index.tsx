@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { formatMYR } from '@/money';
-import { brand, colors, radius, spacing, typography } from '@/theme';
+import { brand, radius, spacing, typography, useThemedStyles, type Colors } from '@/theme';
 import {
   isSameMonth,
   signedAmountSen,
@@ -16,6 +16,7 @@ const typeLabel = (t: Transaction) =>
   TRANSACTION_TYPES.find((option) => option.value === t.type)?.label ?? t.type;
 
 function SummaryCard({ transactions }: { transactions: readonly Transaction[] }) {
+  const styles = useThemedStyles(createStyles);
   const now = new Date();
   const { incomeSen, spendingSen, netSen } = summarize(
     transactions.filter((t) => isSameMonth(t.occurredAt, now)),
@@ -33,6 +34,7 @@ function SummaryCard({ transactions }: { transactions: readonly Transaction[] })
 }
 
 function TransactionRow({ transaction }: { transaction: Transaction }) {
+  const styles = useThemedStyles(createStyles);
   const signed = signedAmountSen(transaction);
   const date = new Date(transaction.occurredAt).toLocaleDateString('en-MY', {
     day: 'numeric',
@@ -56,6 +58,7 @@ function TransactionRow({ transaction }: { transaction: Transaction }) {
 }
 
 export default function HomeScreen() {
+  const styles = useThemedStyles(createStyles);
   const { transactions } = useTransactions();
   return (
     <View style={styles.container}>
@@ -86,42 +89,43 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  list: { padding: spacing.lg, gap: spacing.sm },
-  slogan: { ...typography.body, color: colors.textSecondary },
-  card: {
-    marginVertical: spacing.md,
-    padding: spacing.lg,
-    gap: spacing.xs,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  caption: { ...typography.caption, color: colors.textSecondary },
-  balance: { ...typography.display, color: colors.textPrimary },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  sectionTitle: { ...typography.title, color: colors.textPrimary },
-  empty: { ...typography.body, color: colors.textSecondary, paddingVertical: spacing.lg },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-  },
-  rowText: { flex: 1, gap: 2 },
-  rowTitle: { ...typography.body, color: colors.textPrimary },
-  rowAmount: { ...typography.body, fontWeight: '600', color: colors.textPrimary },
-  rowAmountOut: { color: colors.danger },
-  button: {
-    margin: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-  },
-  buttonPressed: { opacity: 0.85 },
-  buttonText: { ...typography.title, color: colors.textOnPrimary },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    list: { padding: spacing.lg, gap: spacing.sm },
+    slogan: { ...typography.body, color: colors.textSecondary },
+    card: {
+      marginVertical: spacing.md,
+      padding: spacing.lg,
+      gap: spacing.xs,
+      borderRadius: radius.lg,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    caption: { ...typography.caption, color: colors.textSecondary },
+    balance: { ...typography.display, color: colors.textPrimary },
+    summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
+    sectionTitle: { ...typography.title, color: colors.textPrimary },
+    empty: { ...typography.body, color: colors.textSecondary, paddingVertical: spacing.lg },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: spacing.md,
+      borderRadius: radius.md,
+      backgroundColor: colors.surface,
+    },
+    rowText: { flex: 1, gap: 2 },
+    rowTitle: { ...typography.body, color: colors.textPrimary },
+    rowAmount: { ...typography.body, fontWeight: '600', color: colors.textPrimary },
+    rowAmountOut: { color: colors.danger },
+    button: {
+      margin: spacing.lg,
+      paddingVertical: spacing.md,
+      borderRadius: radius.md,
+      alignItems: 'center',
+      backgroundColor: colors.primary,
+    },
+    buttonPressed: { opacity: 0.85 },
+    buttonText: { ...typography.title, color: colors.textOnPrimary },
+  });

@@ -1,6 +1,9 @@
 // Single source of truth for DuitFlow brand + design tokens.
 // Colors are initial recommendations; change them here and the whole app follows.
 
+import { useMemo } from 'react';
+import { useColorScheme } from 'react-native';
+
 export const brand = {
   name: 'DuitFlow',
   slogan: 'Know Where Your Money Goes.',
@@ -22,7 +25,24 @@ const palette = {
   danger: '#DC2626',
 } as const;
 
-export const colors = {
+export interface Colors {
+  isDark: boolean;
+  primary: string;
+  primaryTint: string;
+  secondary: string;
+  accent: string;
+  background: string;
+  surface: string;
+  textPrimary: string;
+  textSecondary: string;
+  icon: string;
+  textOnPrimary: string;
+  border: string;
+  danger: string;
+}
+
+export const lightColors: Colors = {
+  isDark: false,
   primary: palette.mint,
   primaryTint: palette.mintTint,
   secondary: palette.navy,
@@ -38,7 +58,35 @@ export const colors = {
   textOnPrimary: palette.navy,
   border: palette.border,
   danger: palette.danger,
-} as const;
+};
+
+// Deep navy derived from the logo. All text pairs are 6:1 or better.
+export const darkColors: Colors = {
+  isDark: true,
+  primary: palette.mint,
+  primaryTint: '#1F3D3A',
+  secondary: '#EEF1F7',
+  accent: '#5AA2E8',
+  background: '#0E0F24',
+  surface: '#1A1B3A',
+  textPrimary: '#EEF1F7',
+  textSecondary: '#A9B2C3',
+  icon: '#8792A8',
+  textOnPrimary: palette.navy,
+  border: '#2E3060',
+  danger: '#F87171',
+};
+
+// Follows the phone's light/dark setting.
+export function useColors(): Colors {
+  return useColorScheme() === 'dark' ? darkColors : lightColors;
+}
+
+// Builds a StyleSheet from the current colors, rebuilt only when the scheme changes.
+export function useThemedStyles<T>(factory: (colors: Colors) => T): T {
+  const colors = useColors();
+  return useMemo(() => factory(colors), [colors, factory]);
+}
 
 export const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 } as const;
 

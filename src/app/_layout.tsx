@@ -1,10 +1,11 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
-import { colors } from '@/theme';
+import { useColors } from '@/theme';
 import { TransactionsProvider } from '@/transactions/TransactionsContext';
 
 export default function RootLayout() {
+  const colors = useColors();
   return (
     <TransactionsProvider>
       <Stack
@@ -18,7 +19,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ title: 'DuitFlow' }} />
         <Stack.Screen name="add" options={{ title: 'Add transaction', presentation: 'modal' }} />
       </Stack>
-      <StatusBar style="dark" />
+      <StatusBar style={colors.isDark ? 'light' : 'dark'} />
     </TransactionsProvider>
   );
 }
