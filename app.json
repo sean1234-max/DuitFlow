@@ -26,7 +26,8 @@
       "backgroundColor": "#FFFFFF"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "@react-native-community/datetimepicker"
     ],
     "scheme": "duitflow",
     "experiments": {

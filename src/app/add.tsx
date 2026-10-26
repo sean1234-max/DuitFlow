@@ -1,14 +1,14 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { ChipGroup } from '@/components/ChipGroup';
+import { DateField } from '@/components/DateField';
 import { AMOUNT_ERROR, Field } from '@/components/Field';
 import { Screen } from '@/components/Screen';
 import { confirmDestructive } from '@/confirm';
-import { addDays, atLocalNoon, formatDay, isSameDay } from '@/dates';
+import { atLocalNoon } from '@/dates';
 import { useFinance } from '@/finance/FinanceContext';
 import {
   EXPENSE_CATEGORIES,
@@ -18,49 +18,10 @@ import {
   type TransactionType,
 } from '@/finance/transactions';
 import { formatAmountInput, parseAmountToSen } from '@/money';
-import { radius, spacing, typography, useColors, useThemedStyles, type Colors } from '@/theme';
+import { spacing, typography, useThemedStyles, type Colors } from '@/theme';
 
 const NOTE_MAX_LENGTH = 100;
 const CATEGORY_OPTIONS = EXPENSE_CATEGORIES.map((c) => ({ value: c, label: c }));
-
-type DateStepperProps = { date: Date; onChange: (date: Date) => void };
-
-// Day-by-day picker; future dates are blocked because transactions record what already happened.
-function DateStepper({ date, onChange }: DateStepperProps) {
-  const colors = useColors();
-  const styles = useThemedStyles(createStyles);
-  const isToday = isSameDay(date, new Date());
-  return (
-    <View style={styles.wrapper}>
-      <Text style={styles.label}>Date</Text>
-      <View style={styles.dateRow}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Previous day"
-          hitSlop={spacing.sm}
-          onPress={() => onChange(addDays(date, -1))}
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.dateText}>{isToday ? `Today · ${formatDay(date)}` : formatDay(date)}</Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Next day"
-          accessibilityState={{ disabled: isToday }}
-          disabled={isToday}
-          hitSlop={spacing.sm}
-          onPress={() => onChange(addDays(date, 1))}
-        >
-          <Ionicons
-            name="chevron-forward"
-            size={24}
-            color={isToday ? colors.border : colors.textPrimary}
-          />
-        </Pressable>
-      </View>
-    </View>
-  );
-}
 
 export default function TransactionScreen() {
   const styles = useThemedStyles(createStyles);
@@ -129,7 +90,7 @@ export default function TransactionScreen() {
         </View>
       )}
 
-      <DateStepper date={date} onChange={setDate} />
+      <DateField date={date} onChange={setDate} />
 
       <Field
         label="Note (optional)"
@@ -149,15 +110,4 @@ const createStyles = (colors: Colors) =>
   StyleSheet.create({
     wrapper: { gap: spacing.sm },
     label: { ...typography.caption, color: colors.textSecondary },
-    dateRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: spacing.md,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surface,
-    },
-    dateText: { ...typography.body, color: colors.textPrimary },
   });

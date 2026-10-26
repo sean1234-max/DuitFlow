@@ -26,11 +26,13 @@ export function addMonths(month: Date, months: number): Date {
   return new Date(month.getFullYear(), month.getMonth() + months, 1);
 }
 
-export const formatDay = (date: Date) =>
-  date.toLocaleDateString('en-MY', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+export const DEFAULT_LOCALE = 'en-MY';
 
-export const formatShortDay = (iso: string) =>
-  new Date(iso).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' });
+export const formatDay = (date: Date, locale = DEFAULT_LOCALE) =>
+  date.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 
-export const formatMonth = (month: Date) =>
-  month.toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
+export const formatShortDay = (iso: string, locale = DEFAULT_LOCALE) =>
+  new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+
+export const formatMonth = (month: Date, locale = DEFAULT_LOCALE) =>
+  month.toLocaleDateString(locale, { month: 'long', year: 'numeric' });

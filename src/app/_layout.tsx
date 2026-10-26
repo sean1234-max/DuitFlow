@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import { AuthProvider } from '@/auth/AuthContext';
 import { FinanceProvider } from '@/finance/FinanceContext';
+import { LanguageProvider } from '@/i18n';
 import { useColors } from '@/theme';
 import { ThemePreferenceProvider } from '@/themePreference';
 
@@ -33,11 +34,13 @@ function AppStack() {
 export default function RootLayout() {
   return (
     <ThemePreferenceProvider>
-      <AuthProvider>
-        <FinanceProvider>
-          <AppStack />
-        </FinanceProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <FinanceProvider>
+            <AppStack />
+          </FinanceProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </ThemePreferenceProvider>
   );
 }
